@@ -1,5 +1,7 @@
-const request = require('request');
 const yargs = require('yargs');
+
+const geocode = require('./geocode/geocode');
+const weather = require('./weather/weather');
 
 const argv = yargs
     .options({
@@ -16,19 +18,21 @@ const argv = yargs
 
 // console.log(encodeURIComponent(argv.a));
 
-var encodedAddress = encodeURIComponent(argv.a)
-
-request({
-    url: 'https://maps.googleapis.com/maps/api/geocode/json?address=' + encodedAddress,
-    json: true
-}, (error, response, body) => {
-
-    if(error) console.log('Unable to connect to Google servers');
-    else if(body.status === 'ZERO_RESULTS') console.log('Unable to find that address');
-    else if(response)
-    if (body.status === 'OK') {
-        console.log(`Address: ${body.results[0].formatted_address}
-                    Lattitude ${body.results[0].geometry.location.lat} 
-                    Longtitude ${body.results[0].geometry.location.lng}`);
+geocode.googleAPI(argv.a, (errorMessage, results) => {
+    if(errorMessage){
+        console.log(errorMessage);
+    }
+    else{
+        console.log(`Address: ${results.address}`);
+        weather.getWeather(results.lattitude, results.longtitude, (errorMessage, results) => {
+            if(errorMessage){
+                console.log(errorMessage);
+            }
+            else{
+                console.log(`Pogoda: ${results.summary}`);
+                console.log(`Current temperature: ${results.currentTemp}`);
+                console.log(`Apparent temperature: ${results.apparentTemperature}`);
+            }
+        });
     }
 });
